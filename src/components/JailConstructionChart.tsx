@@ -1,17 +1,21 @@
 import { useEffect, useRef } from "react";
-import Highcharts from "highcharts";
+import Highcharts from "highcharts/esm/highcharts";
+import "highcharts/esm/modules/sonification";
+
 import type { JailConstructionInfo } from "../pages/index.astro";
 
 interface JailConstructionChartProps {
   data: JailConstructionInfo[];
 }
 
-const JailConstructionChart = ({ data }: JailConstructionChartProps) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+export const JailConstructionChart = ({ data }: JailConstructionChartProps) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const chartRef = useRef<Highcharts.Chart | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
-    Highcharts.chart(containerRef.current, {
+
+    chartRef.current = Highcharts.chart(containerRef.current, {
       title: { text: "U.S Jail Construction", align: "left" },
       yAxis: { title: { text: "Cost in $ billions" } },
       xAxis: { accessibility: { rangeDescription: "Range: 2002 to 2022" } },
@@ -27,10 +31,23 @@ const JailConstructionChart = ({ data }: JailConstructionChartProps) => {
           data: data?.map((info) => Number(info.project_amount_clean) / 1e9),
         },
       ],
+      sonification: {
+        enabled: true,
+        duration: 3000,
+      },
     });
+
+    return () => chartRef.current?.destroy();
   }, []);
 
-  return <div ref={containerRef} />;
-};
+  const handlePlay = () => {
+    chartRef.current?.sonify();
+  };
 
-export default JailConstructionChart;
+  return (
+    <div>
+      <div ref={containerRef} style={{ height: 400 }} />
+      <button onClick={handlePlay}>Play sonification</button>
+    </div>
+  );
+};
